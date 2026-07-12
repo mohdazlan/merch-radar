@@ -1,0 +1,92 @@
+// SQLite for local dev; written to be Postgres-portable (no SQLite-only
+// types). Switch by pointing DATABASE_URL at Postgres and changing provider.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  name             String
+  tier             String
+  region           String
+  peakDate         DateTime
+  spanStart        DateTime
+  spanEnd          DateTime
+  leadWeeks        Int
+  etsyScore        Int
+  ebayScore        Int
+  keywords         Json
+  niches           Json
+  designDirections Json
+  palettes         Json
+  styles           Json
+  products         Json
+
+  snapshots DemandSnapshot[]
+}
+
+model DemandSnapshot {
+  id         String   @id @default(cuid())
+  eventId    String
+  date       DateTime
+  source     String
+  matchCount Int
+  soldCount  Int?
+  velocity   Float?
+
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@index([eventId, date])
+}
+
+model CompsCache {
+  id        String   @id @default(cuid())
+  queryHash String   @unique
+  payload   Json
+  fetchedAt DateTime
+}
+
+model Analysis {
+  id          String   @id @default(cuid())
+  userId      String?
+  title       String
+  buyCost     Float
+  shipCost    Float
+  platform    String
+  metrics     Json
+  verdict     String
+  ruleId      String
+  confidence  Int
+  aiNarrative Json?
+  createdAt   DateTime @default(now())
+}
+
+model Manifest {
+  id        String   @id @default(cuid())
+  userId    String?
+  name      String
+  rows      Json
+  summary   Json
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  persona   String
+  createdAt DateTime @default(now())
+}
+
+model UserNiche {
+  userId String
+  niche  String
+
+  @@id([userId, niche])
+}
