@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Terminal } from "lucide-react";
 import { DemoBadge } from "@/components/shared/DemoBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { Chip, ProvenanceTag } from "@/components/shared/Chip";
 import { SourcingTabs } from "@/components/sourcing/SourcingTabs";
 import { VerdictChip } from "@/components/sourcing/VerdictChip";
 import { FIXTURE_PRODUCTS } from "@/lib/db/fixtures/comps";
@@ -25,6 +24,9 @@ const DEMO_BUYS: Record<string, { buyCost: number; shippingCost: number }> = {
 const money = (x: number) => `$${x.toFixed(2)}`;
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 const na = "—";
+
+/** low confidence must visibly drop the verdict's weight (§5.4) */
+const WEAK_THRESHOLD = 50;
 
 function buildRows() {
   return FIXTURE_PRODUCTS.map((p) => {
@@ -58,10 +60,16 @@ function buildRows() {
       soldPrices: soldOk ? soldOk.prices : null,
       dataAgeDays: 1,
     });
+    const weak =
+      confidence.lowSample || confidence.confidence < WEAK_THRESHOLD;
 
-    return { product: p, buy, metrics, verdict, confidence };
+    return { product: p, buy, metrics, verdict, confidence, weak };
   }).filter((r) => r !== null);
 }
+
+/** sticky first column so the item stays in view while the row scrolls */
+const stickyCell =
+  "sticky left-0 z-10 bg-bg shadow-[inset_-1px_0_0_0_var(--line)]";
 
 export default function SourcingPage() {
   const rows = buildRows();
@@ -74,99 +82,185 @@ export default function SourcingPage() {
           <h1 className="font-display text-3xl font-black uppercase tracking-tight">
             ApexSourcing Engine
           </h1>
-          <p className="mt-1 text-sm text-ink-2">
-            Should you buy it, at this cost? Math in TypeScript, judgment on
-            top — every verdict names the rule that fired.
+          <p className="mt-1 max-w-prose text-sm text-ink-2">
+            Should you buy it, at this cost? Every number here comes from a
+            disclosed formula, and each verdict names the rule behind it.
           </p>
         </div>
         <DemoBadge always />
       </div>
 
-      <div className="mt-8 overflow-x-auto">
-        <table className="w-full min-w-[880px] border-collapse text-sm">
-          <caption className="sr-only">
-            Demo sourcing analyses computed by the fee, metrics, and verdict
-            engines from fixture comps
-          </caption>
-          <thead>
-            <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-ink-2">
-              <th className="py-2 pr-4 font-medium">Item · demo buy</th>
-              <th className="py-2 pr-4 text-right font-medium">Est. sell</th>
-              <th className="py-2 pr-4 text-right font-medium">Net profit</th>
-              <th className="py-2 pr-4 text-right font-medium">ROI</th>
-              <th className="py-2 pr-4 text-right font-medium">STR</th>
-              <th className="py-2 pr-4 text-right font-medium">Days to flip</th>
-              <th className="py-2 pr-4 text-right font-medium">Profit/day</th>
-              <th className="py-2 font-medium">Verdict</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(({ product, buy, metrics, verdict, confidence }) => (
-              <tr key={product.key} className="border-b border-line align-top">
-                <td className="py-3 pr-4">
-                  <div className="font-medium">{product.title}</div>
-                  <div className="num mt-0.5 text-xs text-ink-2">
-                    buy {money(buy.buyCost)} + ship {money(buy.shippingCost)}
-                  </div>
-                </td>
-                <td className="num py-3 pr-4 text-right">
-                  <div>{money(metrics.estSellPrice)}</div>
-                  <div className="mt-0.5 flex justify-end">
-                    <ProvenanceTag
-                      kind={
-                        metrics.estSellPriceSource === "SOLD_MEDIAN"
-                          ? "DEMO"
-                          : "MODELED"
-                      }
-                    />
-                  </div>
-                </td>
-                <td
-                  className={`num py-3 pr-4 text-right font-medium ${
-                    metrics.netProfit > 0 ? "text-gain-text" : "text-loss-text"
-                  }`}
+      {rows.length === 0 ? (
+        <div className="mt-8">
+          <EmptyState
+            icon={Terminal}
+            title="No analyses to show"
+            body="No demo comps resolved into a priceable analysis. Once the Co-Pilot input lands, your own lookups appear here."
+          />
+        </div>
+      ) : (
+        <div
+          className="mt-8 overflow-x-auto"
+          tabIndex={0}
+          role="region"
+          aria-label="Sourcing analyses (scrollable)"
+        >
+          <table className="w-full min-w-[760px] border-collapse text-sm">
+            <caption className="sr-only">
+              Demo sourcing analyses computed by the fee, metrics, and verdict
+              engines from fixture comps. The item column stays fixed while the
+              table scrolls sideways.
+            </caption>
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wide text-ink-2">
+                <th
+                  scope="col"
+                  className={`${stickyCell} border-b border-line py-2 pr-4 font-medium`}
                 >
-                  {money(metrics.netProfit)}
-                </td>
-                <td className="num py-3 pr-4 text-right">{pct(metrics.roi)}</td>
-                <td className="num py-3 pr-4 text-right">
-                  {metrics.sellThroughRate === null ? (
-                    <span title="requires sold data">{na}</span>
-                  ) : (
-                    pct(metrics.sellThroughRate)
-                  )}
-                </td>
-                <td className="num py-3 pr-4 text-right">
-                  {metrics.daysToFlip === null
-                    ? na
-                    : Math.round(metrics.daysToFlip)}
-                </td>
-                <td className="num py-3 pr-4 text-right">
-                  {metrics.capitalPerDay === null
-                    ? na
-                    : money(metrics.capitalPerDay)}
-                </td>
-                <td className="py-3">
-                  <div className="flex flex-col items-start gap-1">
-                    <VerdictChip verdict={verdict.verdict} />
-                    <span className="num text-xs text-ink-2">
-                      {verdict.ruleId} · conf {confidence.confidence}%
-                    </span>
-                    {confidence.lowSample && (
-                      <Chip tone="warn">Low sample</Chip>
-                    )}
-                  </div>
-                </td>
+                  Item · demo buy
+                </th>
+                <th
+                  scope="col"
+                  className="border-b border-line py-2 pr-4 font-medium"
+                >
+                  Verdict
+                </th>
+                <th
+                  scope="col"
+                  className="border-b border-line py-2 pr-4 text-right font-medium"
+                >
+                  Est. sell
+                </th>
+                <th
+                  scope="col"
+                  className="border-b border-line py-2 pr-4 text-right font-medium"
+                >
+                  Net profit
+                </th>
+                <th
+                  scope="col"
+                  className="border-b border-line py-2 pr-4 text-right font-medium"
+                >
+                  ROI
+                </th>
+                <th
+                  scope="col"
+                  className="border-b border-line py-2 pr-4 text-right font-medium"
+                >
+                  Sell-through
+                </th>
+                <th
+                  scope="col"
+                  className="border-b border-line py-2 pr-4 text-right font-medium"
+                >
+                  Days to flip
+                </th>
+                <th
+                  scope="col"
+                  className="border-b border-line py-2 text-right font-medium"
+                >
+                  Profit / day
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {rows.map(
+                ({ product, buy, metrics, verdict, confidence, weak }) => (
+                  <tr key={product.key} className="align-top">
+                    <td
+                      className={`${stickyCell} border-b border-line py-3 pr-4`}
+                    >
+                      <div className="line-clamp-2 max-w-[240px] font-medium">
+                        {product.title}
+                      </div>
+                      <div className="num mt-0.5 text-xs text-ink-2">
+                        buy {money(buy.buyCost)} + ship{" "}
+                        {money(buy.shippingCost)}
+                      </div>
+                    </td>
+                    <td className="border-b border-line py-3 pr-4">
+                      <div className="flex flex-col items-start gap-1">
+                        <VerdictChip verdict={verdict.verdict} weak={weak} />
+                        <span className="num text-xs text-ink-2">
+                          {verdict.ruleId} · conf {confidence.confidence}%
+                          {confidence.lowSample && " · low sample"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="num border-b border-line py-3 pr-4 text-right">
+                      <div>{money(metrics.estSellPrice)}</div>
+                      <div className="mt-0.5 text-xs text-ink-2">
+                        {metrics.estSellPriceSource === "SOLD_MEDIAN"
+                          ? "sold median"
+                          : "active only"}
+                      </div>
+                    </td>
+                    <td
+                      className={`num border-b border-line py-3 pr-4 text-right font-medium ${
+                        metrics.netProfit > 0
+                          ? "text-gain-text"
+                          : "text-loss-text"
+                      }`}
+                    >
+                      {money(metrics.netProfit)}
+                    </td>
+                    <td className="num border-b border-line py-3 pr-4 text-right">
+                      {pct(metrics.roi)}
+                    </td>
+                    <td className="num border-b border-line py-3 pr-4 text-right">
+                      {metrics.sellThroughRate === null
+                        ? na
+                        : pct(metrics.sellThroughRate)}
+                    </td>
+                    <td className="num border-b border-line py-3 pr-4 text-right">
+                      {metrics.daysToFlip === null
+                        ? na
+                        : Math.round(metrics.daysToFlip)}
+                    </td>
+                    <td
+                      className={`num border-b border-line py-3 text-right font-medium ${
+                        metrics.capitalPerDay === null
+                          ? "text-ink-2"
+                          : metrics.capitalPerDay > 0
+                            ? "text-gain-text"
+                            : "text-loss-text"
+                      }`}
+                    >
+                      {metrics.capitalPerDay === null
+                        ? na
+                        : money(metrics.capitalPerDay)}
+                    </td>
+                  </tr>
+                ),
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-      <p className="mt-3 text-xs text-ink-2">
-        Synthetic comps, real engines: these rows are computed live by the fee
-        waterfall, §5.3 metrics, and the ordered verdict rules — zero AI, zero
-        API calls.
+      <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-2">
+        <div className="flex gap-1.5">
+          <dt className="num">{na}</dt>
+          <dd>requires sold data</dd>
+        </div>
+        <div className="flex gap-1.5">
+          <dt className="num">Rn</dt>
+          <dd>verdict rule that fired (full inputs in M2)</dd>
+        </div>
+        <div className="flex gap-1.5">
+          <dt>Profit / day</dt>
+          <dd>net profit ÷ days to flip — the velocity metric</dd>
+        </div>
+        <div className="flex gap-1.5">
+          <dt>Est. sell</dt>
+          <dd>a modeled estimate, not an observed price</dd>
+        </div>
+      </dl>
+
+      <p className="mt-4 max-w-prose text-xs text-ink-2">
+        Synthetic comps, real engines: every row is computed live by the fee
+        waterfall, the sourcing metrics, and the ordered verdict rules — zero
+        AI, zero API calls.
       </p>
 
       <div className="mt-10">
