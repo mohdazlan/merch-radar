@@ -43,3 +43,10 @@ next-env.d.ts
 
 # local sqlite
 prisma/dev.db
+
+# impeccable live-mode runtime (volatile)
+.impeccable/live/server.json
+.impeccable/live/sessions/
+
+# graphify knowledge-graph artifacts (regenerable)
+graphify-out/

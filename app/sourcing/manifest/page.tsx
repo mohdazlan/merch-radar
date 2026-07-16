@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { FileSpreadsheet } from "lucide-react";
 import { DemoBadge } from "@/components/shared/DemoBadge";
-import { EmptyState } from "@/components/shared/EmptyState";
+import { ManifestClient } from "@/components/sourcing/ManifestClient";
 import { SourcingTabs } from "@/components/sourcing/SourcingTabs";
 
 export const metadata: Metadata = { title: "Manifest" };
@@ -23,12 +22,8 @@ export default function ManifestPage() {
         <DemoBadge />
       </div>
 
-      <div className="mt-10">
-        <EmptyState
-          icon={FileSpreadsheet}
-          title="The manifest pipeline lands in M6"
-          body="CSV paste and upload, column mapping, cached batched comps, per-row verdicts at zero AI cost, and the manifest-level bid line: total cost, projected net, blended ROI, dead-stock count, days to clear."
-        />
+      <div className="mt-8">
+        <ManifestClient />
       </div>
     </div>
   );
