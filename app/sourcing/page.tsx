@@ -3,6 +3,7 @@ import { Terminal } from "lucide-react";
 import { DemoBadge } from "@/components/shared/DemoBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SourcingTabs } from "@/components/sourcing/SourcingTabs";
+import { SourcingClient } from "@/components/sourcing/SourcingClient";
 import { VerdictChip } from "@/components/sourcing/VerdictChip";
 import { FIXTURE_PRODUCTS } from "@/lib/db/fixtures/comps";
 import { fitDecay } from "@/lib/forecast/decay";
@@ -89,6 +90,18 @@ export default function SourcingPage() {
         </div>
         <DemoBadge always />
       </div>
+
+      <div className="mt-6">
+        <SourcingClient />
+      </div>
+
+      <h2 className="mt-12 font-display text-lg font-black uppercase tracking-tight">
+        Demo scenarios
+      </h2>
+      <p className="mt-1 text-sm text-ink-2">
+        Five fixture products through the same engines — type one into the
+        form above to run it interactively.
+      </p>
 
       {rows.length === 0 ? (
         <div className="mt-8">
@@ -263,13 +276,6 @@ export default function SourcingPage() {
         AI, zero API calls.
       </p>
 
-      <div className="mt-10">
-        <EmptyState
-          icon={Terminal}
-          title="The Co-Pilot input panel lands in M2"
-          body="Type a product and a buy cost, get the verdict banner with its Why? disclosure, the six-tile metrics grid, and the interactive fee waterfall."
-        />
-      </div>
     </div>
   );
 }
