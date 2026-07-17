@@ -135,7 +135,7 @@ export function RadarClient({
           type="button"
           onClick={() => setTier(null)}
           aria-pressed={!tierFilter}
-          className={`min-h-9 border px-3 text-xs font-medium uppercase ${
+          className={`min-h-11 border px-3 text-xs font-medium uppercase ${
             !tierFilter ? "border-accent text-ink" : "border-line text-ink-2"
           }`}
         >
@@ -147,7 +147,7 @@ export function RadarClient({
             type="button"
             onClick={() => setTier(t)}
             aria-pressed={tierFilter === t}
-            className={`min-h-9 border px-3 text-xs font-medium uppercase ${
+            className={`min-h-11 border px-3 text-xs font-medium uppercase ${
               tierFilter === t ? "border-accent text-ink" : "border-line text-ink-2"
             }`}
           >
@@ -203,7 +203,7 @@ export function RadarClient({
                     <button
                       type="button"
                       onClick={() => void openBrief(e)}
-                      className="inline-flex min-h-9 items-center gap-1 border border-line px-2.5 text-xs font-medium hover:border-ink-2"
+                      className="inline-flex min-h-11 items-center gap-1 border border-line px-2.5 text-xs font-medium hover:border-ink-2"
                     >
                       <FileText size={12} aria-hidden />
                       Brief
@@ -235,7 +235,7 @@ export function RadarClient({
                   setBrief(null);
                 }}
                 aria-label="Close brief"
-                className="inline-flex h-9 w-9 items-center justify-center border border-line hover:border-ink-2"
+                className="inline-flex h-11 w-11 items-center justify-center border border-line hover:border-ink-2"
               >
                 <X size={14} aria-hidden />
               </button>

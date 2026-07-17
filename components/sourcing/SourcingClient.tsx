@@ -5,12 +5,29 @@ import { CloudOff } from "lucide-react";
 import { useDemoMode } from "@/components/shared/DemoModeProvider";
 import { ErrorState } from "@/components/shared/ErrorState";
 import { Chip } from "@/components/shared/Chip";
+import dynamic from "next/dynamic";
 import { SourcingForm, type SourcingFormValues } from "@/components/sourcing/SourcingForm";
 import { VerdictBanner } from "@/components/sourcing/VerdictBanner";
 import { MetricsGrid } from "@/components/sourcing/MetricsGrid";
 import { FeeCalculator } from "@/components/sourcing/FeeCalculator";
-import { DecayChart } from "@/components/sourcing/DecayChart";
 import { HypePanel } from "@/components/sourcing/HypePanel";
+
+// Recharts is the heaviest client dependency and only renders after an
+// analysis — split it out of the initial /sourcing bundle
+const DecayChart = dynamic(
+  () =>
+    import("@/components/sourcing/DecayChart").then((m) => ({
+      default: m.DecayChart,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <p className="text-sm text-ink-2" role="status">
+        Loading chart…
+      </p>
+    ),
+  },
+);
 import { AiNarrative, type AiState } from "@/components/sourcing/AiNarrative";
 import { analyze } from "@/lib/analysis/compute";
 import type { CompsResult } from "@/lib/analysis/types";

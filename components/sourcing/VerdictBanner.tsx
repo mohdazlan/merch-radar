@@ -45,7 +45,13 @@ export function VerdictBanner({ analysis }: { analysis: Analysis }) {
   }[family];
 
   return (
-    <section aria-label="Verdict" className={`border ${weak ? weakCls : solid}`}>
+    // aria-live: preset/ad-rate changes recompute the verdict without a page
+    // event — announce the new verdict to screen readers
+    <section
+      aria-label="Verdict"
+      aria-live="polite"
+      className={`border ${weak ? weakCls : solid}`}
+    >
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-4">
         <Icon size={26} aria-hidden />
         <h2 className="font-display text-2xl font-black uppercase leading-none tracking-tight md:text-4xl">

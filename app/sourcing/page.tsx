@@ -180,8 +180,9 @@ export default function SourcingPage() {
               {rows.map(
                 ({ product, buy, metrics, verdict, confidence, weak }) => (
                   <tr key={product.key} className="align-top">
-                    <td
-                      className={`${stickyCell} border-b border-line py-3 pr-4`}
+                    <th
+                      scope="row"
+                      className={`${stickyCell} border-b border-line py-3 pr-4 text-left font-normal`}
                     >
                       <div className="line-clamp-2 max-w-[240px] font-medium">
                         {product.title}
@@ -190,7 +191,7 @@ export default function SourcingPage() {
                         buy {money(buy.buyCost)} + ship{" "}
                         {money(buy.shippingCost)}
                       </div>
-                    </td>
+                    </th>
                     <td className="border-b border-line py-3 pr-4">
                       <div className="flex flex-col items-start gap-1">
                         <VerdictChip verdict={verdict.verdict} weak={weak} />

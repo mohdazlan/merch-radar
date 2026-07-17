@@ -26,7 +26,9 @@ export default function RadarPage() {
             demand crests.
           </p>
         </div>
-        <DemoBadge />
+        {/* seed events are synthetic regardless of the Demo Mode toggle —
+            the badge stays until live event scoring exists (Rule 2) */}
+        <DemoBadge always />
       </div>
 
       <ActNowStrip now={now} />
