@@ -58,6 +58,7 @@ export function ManifestClient() {
     "idle" | "running" | "done" | "unavailable"
   >("idle");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const parseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mappedRows: ManifestRow[] = useMemo(() => {
     if (!parsed || !mapping) return [];
@@ -309,7 +310,16 @@ export function ManifestClient() {
           id="manifest-paste"
           rows={6}
           value={rawText}
-          onChange={(e) => e.target.value.trim() ? loadText(e.target.value) : setRawText(e.target.value)}
+          onChange={(e) => {
+            // debounce: re-parsing a 500-row paste on every keystroke is
+            // wasted work — parse 300ms after typing settles
+            const text = e.target.value;
+            setRawText(text);
+            if (parseTimer.current) clearTimeout(parseTimer.current);
+            if (text.trim()) {
+              parseTimer.current = setTimeout(() => loadText(text), 300);
+            }
+          }}
           onDrop={(e) => {
             const f = e.dataTransfer.files?.[0];
             if (f) {
@@ -329,7 +339,7 @@ export function ManifestClient() {
               const f = e.target.files?.[0];
               if (f) void onFile(f);
             }}
-            className="text-xs text-ink-2 file:mr-2 file:min-h-9 file:border file:border-line file:bg-surface file:px-3 file:text-xs file:text-ink"
+            className="text-xs text-ink-2 file:mr-2 file:min-h-11 file:border file:border-line file:bg-surface file:px-3 file:text-xs file:text-ink"
           />
         </div>
       </section>

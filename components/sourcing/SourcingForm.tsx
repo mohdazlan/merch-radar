@@ -28,22 +28,16 @@ const labelCls = "mb-1 block text-xs font-medium uppercase tracking-wide text-in
 export function SourcingForm({
   onAnalyze,
   loading,
-  prefill,
 }: {
   onAnalyze: (values: SourcingFormValues) => void;
   loading: boolean;
-  prefill?: Partial<SourcingFormValues>;
 }) {
-  const [q, setQ] = useState(prefill?.q ?? "");
-  const [buyCost, setBuyCost] = useState(prefill?.buyCost?.toString() ?? "");
-  const [shippingCost, setShippingCost] = useState(
-    prefill?.shippingCost?.toString() ?? "8.00",
-  );
-  const [qty, setQty] = useState(prefill?.qty?.toString() ?? "1");
-  const [condition, setCondition] = useState<Condition>(
-    prefill?.condition ?? "USED_GOOD",
-  );
-  const [presetId, setPresetId] = useState(prefill?.presetId ?? "ebay");
+  const [q, setQ] = useState("");
+  const [buyCost, setBuyCost] = useState("");
+  const [shippingCost, setShippingCost] = useState("8.00");
+  const [qty, setQty] = useState("1");
+  const [condition, setCondition] = useState<Condition>("USED_GOOD");
+  const [presetId, setPresetId] = useState("ebay");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function submit(e: React.FormEvent) {

@@ -49,7 +49,7 @@ export function FeeCalculator({
               id="fee-preset"
               value={presetId}
               onChange={(e) => onPresetChange(e.target.value)}
-              className="h-9 border border-line bg-surface px-2 text-sm"
+              className="h-11 border border-line bg-surface px-2 text-sm"
             >
               {Object.values(FEE_PRESETS).map((p) => (
                 <option key={p.id} value={p.id}>
@@ -77,7 +77,7 @@ export function FeeCalculator({
                   Math.max(0, Math.min(30, Number(e.target.value))) / 100,
                 )
               }
-              className="num h-9 w-20 border border-line bg-surface px-2 text-sm"
+              className="num h-11 w-20 border border-line bg-surface px-2 text-sm"
             />
           </div>
         </div>
