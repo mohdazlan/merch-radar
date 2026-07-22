@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Merch Radar
 
-## Getting Started
+One app, two surfaces, one eBay demand engine:
 
-First, run the development server:
+- **Radar** (`/radar`) — what to make and by when. Seasonal/event demand with launch-by dates for POD sellers.
+- **ApexSourcing Engine** (`/sourcing`, `/sourcing/manifest`) — what's worth buying today. Comps, sell-through, fee-true margin, and a rule-based verdict for resellers.
+
+Full product/design context lives in [`PRODUCT.md`](./PRODUCT.md), [`DESIGN.md`](./DESIGN.md), and the build spec [`MERCH-RADAR-BUILD-SPEC-v2.md`](./MERCH-RADAR-BUILD-SPEC-v2.md).
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
+cp .env.example .env
+pnpm exec prisma db push   # creates the local SQLite dev.db
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). **Demo Mode is on by default**, so the app is fully functional with zero API keys — every eBay call is served from fixtures and every surface shows the amber `DEMO DATA` badge.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm test     # Vitest — the pure engines in lib/ (fees, verdict, forecast, manifest parsing)
+pnpm lint
+pnpm build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment variables
 
-## Learn More
+Copied from [`.env.example`](./.env.example). **None of these are required to run or demo the app** — Demo Mode works with an empty `.env`.
 
-To learn more about Next.js, take a look at the following resources:
+| Variable | Required? | Notes |
+|---|---|---|
+| `DATABASE_URL` | Set to *something* well-formed (e.g. `file:./dev.db`) | Only read on the live-eBay path (6h comps cache). Prisma initializes even if nothing ever writes to it in Demo Mode. |
+| `DEMO_MODE` | Recommended: `true` | Default app-wide fallback when a request doesn't explicitly pass `demo`. |
+| `ANTHROPIC_API_KEY` | No | Enables the AI risk narrative (`/api/analyze`), campaign briefs (`/api/brief`), and manifest AI triage (`/api/manifest`). Without it, those routes return `available:false` and the UI shows its designed fallback — the verdict and all metrics never depend on this key. |
+| `EBAY_CLIENT_ID` / `EBAY_CLIENT_SECRET` | No | Enables live eBay Browse data. Without them, comps always come from fixtures (Demo Mode), regardless of the toggle. |
+| `EBAY_MARKETPLACE_ID` | No | Defaults to `EBAY_US`. |
+| `EBAY_ENV` | No | `sandbox` or `production`. |
+| `EBAY_INSIGHTS_ENABLED` | No | Set to `true` only once eBay has granted Marketplace Insights access — this is a separate, harder approval than Browse API access. Until then sold data stays `UNAVAILABLE` rather than being guessed. |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Your `.env` file is git-ignored (see `.gitignore`) and has never been committed — only `.env.example`, which contains empty placeholder values. See [`lib/ai/client.ts`](./lib/ai/client.ts) — it's marked `import "server-only"`, so `ANTHROPIC_API_KEY` can never be bundled into client-side JavaScript; the build fails if a client component ever imports it.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploying
 
-## Deploy on Vercel
+### Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Import the repo at [vercel.com/new](https://vercel.com/new).
+2. Add the env vars from the table above under **Environment Variables**. For a first deploy, `DEMO_MODE=true` and `DATABASE_URL=file:./dev.db` are enough — everything else is optional and can be added later without a redeploy of code.
+3. **SQLite caveat**: Vercel's serverless functions don't have a persistent writable filesystem, so the `file:./dev.db` comps cache won't actually persist between requests. This doesn't affect Demo Mode (fixtures never touch the DB). If you later enable live eBay data and want the 6h comps cache to work, point `DATABASE_URL` at a real Postgres instance instead (Vercel Postgres, Neon, Supabase all have free tiers) — the schema in [`prisma/schema.prisma`](./prisma/schema.prisma) is written to be Postgres-portable, just switch the `provider`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Elsewhere (any Node host)
+
+```bash
+pnpm build
+pnpm start
+```
+
+SQLite works normally on a host with a persistent filesystem.
+
+## Project structure
+
+See the directory shape in [`MERCH-RADAR-BUILD-SPEC-v2.md`](./MERCH-RADAR-BUILD-SPEC-v2.md#21-directory-shape). In short: `/lib/fees`, `/lib/verdict`, `/lib/forecast` are pure, unit-tested functions — Claude never computes a number the user acts on (see spec §3, Rule 1).
+
+## Learn more
+
+Built on [Next.js](https://nextjs.org) (App Router) — see the [Next.js docs](https://nextjs.org/docs) for framework-level questions.
