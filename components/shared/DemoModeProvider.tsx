@@ -9,8 +9,10 @@ import {
 
 const STORAGE_KEY = "mr-demo-mode";
 
-// localStorage-backed external store: SSR renders Demo Mode ON (the default
-// so the app is fully testable with no API keys), the client re-reads on mount.
+// localStorage-backed external store. Default is OFF now that production eBay
+// keys are live — a first-time visitor should see real marketplace data, not
+// synthetic fixtures. Old visitors who deliberately toggled it ON keep their
+// preference (localStorage takes precedence over the default).
 const listeners = new Set<() => void>();
 
 function subscribe(cb: () => void) {
@@ -23,11 +25,11 @@ function subscribe(cb: () => void) {
 }
 
 function getSnapshot(): boolean {
-  return window.localStorage.getItem(STORAGE_KEY) !== "false";
+  return window.localStorage.getItem(STORAGE_KEY) === "true";
 }
 
 function getServerSnapshot(): boolean {
-  return true;
+  return false;
 }
 
 type DemoModeContextValue = {
@@ -36,7 +38,7 @@ type DemoModeContextValue = {
 };
 
 const DemoModeContext = createContext<DemoModeContextValue>({
-  demoMode: true,
+  demoMode: false,
   setDemoMode: () => {},
 });
 

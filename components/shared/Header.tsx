@@ -16,7 +16,7 @@ const NAV_ITEMS = [
     // sub-tab within Sourcing on <900px, hidden from the top nav there
     hideBelow900: true,
   },
-  { label: "Trends", href: "/radar#trend-radar", match: /^$/ },
+  { label: "Middleman", href: "/middleman", match: /^\/middleman/ },
 ];
 
 export function Header() {
