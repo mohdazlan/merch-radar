@@ -17,6 +17,7 @@ const NAV_ITEMS = [
     hideBelow900: true,
   },
   { label: "Middleman", href: "/middleman", match: /^\/middleman/ },
+  { label: "Scout", href: "/scout", match: /^\/scout/ },
 ];
 
 export function Header() {

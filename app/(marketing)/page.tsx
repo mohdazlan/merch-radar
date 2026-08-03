@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Handshake, Radar, ShoppingCart } from "lucide-react";
+import { ArrowRight, Handshake, Radar, ShoppingCart, Sprout } from "lucide-react";
 
 export default function LandingPage() {
   return (
@@ -75,6 +75,27 @@ export default function LandingPage() {
           </p>
           <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-gain-text">
             Price the flip <ArrowRight size={14} aria-hidden />
+          </span>
+        </Link>
+
+        <Link
+          href="/scout"
+          className="group flex flex-col gap-3 bg-bg p-6 hover:bg-surface md:col-span-3"
+        >
+          <div className="flex items-center gap-2">
+            <Sprout size={18} className="text-warn-text" aria-hidden />
+            <span className="font-display text-lg font-black uppercase">
+              Scout
+            </span>
+          </div>
+          <p className="max-w-2xl text-sm text-ink-2">
+            <em>What&apos;s selling right now, and who&apos;s selling it?</em>{" "}
+            Filter eBay for brand-new sellers who are already moving product —
+            if someone with no reputation can shift it, the product is doing
+            the work.
+          </p>
+          <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-warn-text">
+            Find winners <ArrowRight size={14} aria-hidden />
           </span>
         </Link>
       </div>
