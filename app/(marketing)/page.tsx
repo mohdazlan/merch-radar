@@ -1,22 +1,23 @@
 import Link from "next/link";
-import { ArrowRight, Radar, ShoppingCart } from "lucide-react";
+import { ArrowRight, Handshake, Radar, ShoppingCart } from "lucide-react";
 
 export default function LandingPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-16 md:py-24">
       <p className="font-mono text-xs uppercase tracking-widest text-ink-2">
-        One app, two surfaces
+        One app, three questions
       </p>
       <h1 className="mt-3 max-w-3xl font-display text-4xl font-black uppercase leading-none tracking-tight md:text-6xl">
         Stop finding out too late. Stop buying dead stock.
       </h1>
       <p className="mt-6 max-w-2xl text-lg text-ink-2">
         Merch Radar tells you what to launch this week. ApexSourcing tells you
-        what&apos;s worth buying today. Same eBay demand engine, same fee math,
-        two different decisions.
+        what&apos;s worth buying today. Middleman tells you what to list from
+        a supplier friend. Same live eBay data, same fee math, three
+        different decisions.
       </p>
 
-      <div className="mt-12 grid gap-px border border-line bg-line md:grid-cols-2">
+      <div className="mt-12 grid gap-px border border-line bg-line md:grid-cols-3">
         <Link
           href="/radar"
           className="group flex flex-col gap-3 bg-bg p-6 hover:bg-surface"
@@ -54,6 +55,26 @@ export default function LandingPage() {
           </p>
           <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-riso-blue">
             Analyze a buy <ArrowRight size={14} aria-hidden />
+          </span>
+        </Link>
+
+        <Link
+          href="/middleman"
+          className="group flex flex-col gap-3 bg-bg p-6 hover:bg-surface"
+        >
+          <div className="flex items-center gap-2">
+            <Handshake size={18} className="text-gain-text" aria-hidden />
+            <span className="font-display text-lg font-black uppercase">
+              Middleman
+            </span>
+          </div>
+          <p className="text-sm text-ink-2">
+            <em>My friend supplies — can I resell it on eBay?</em> Live
+            competitor ladder, undercut pricing, and the exact break-even
+            supplier price to negotiate against.
+          </p>
+          <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-gain-text">
+            Price the flip <ArrowRight size={14} aria-hidden />
           </span>
         </Link>
       </div>

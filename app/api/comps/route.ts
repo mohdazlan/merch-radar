@@ -25,9 +25,9 @@ export async function POST(req: Request) {
     );
   }
   const { q, condition, demo } = parsed.data;
-  const result = await getComps(
-    { q, condition },
-    demo ?? process.env.DEMO_MODE !== "false",
-  );
+  // Live is the default; only fall back to fixtures if the caller explicitly
+  // says demo, or the operator has forced DEMO_MODE=true env-wide.
+  const useDemo = demo ?? process.env.DEMO_MODE === "true";
+  const result = await getComps({ q, condition }, useDemo);
   return NextResponse.json(result);
 }
