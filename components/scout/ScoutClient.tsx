@@ -69,7 +69,7 @@ export function ScoutClient() {
             pipeline={state.result.pipeline}
             totalMatched={state.result.totalMatched}
           />
-          <ScoutResults result={state.result} />
+          <ScoutResults result={state.result} sort={lastQuery?.sort} />
         </>
       )}
     </div>

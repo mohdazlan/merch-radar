@@ -4,7 +4,7 @@ import { AlertTriangle, Download, ExternalLink, Printer, Sprout } from "lucide-r
 import { Chip } from "@/components/shared/Chip";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { toCsv } from "@/lib/scout/filters";
-import type { ScoutResult } from "@/lib/scout/types";
+import type { ScoutQuery, ScoutResult } from "@/lib/scout/types";
 
 const money = (x: number) => `$${x.toFixed(2)}`;
 
@@ -21,7 +21,14 @@ function fmtDate(iso: string | null): string {
 /** feedback score at or below this earns the "new seller" highlight */
 const NEW_SELLER_HIGHLIGHT = 100;
 
-export function ScoutResults({ result }: { result: ScoutResult }) {
+export function ScoutResults({
+  result,
+  sort,
+}: {
+  result: ScoutResult;
+  /** the sort the last search actually ran with, so the banner can name it */
+  sort?: ScoutQuery["sort"];
+}) {
   function exportCsv() {
     const blob = new Blob([toCsv(result.items)], {
       type: "text/csv;charset=utf-8",
@@ -62,7 +69,11 @@ export function ScoutResults({ result }: { result: ScoutResult }) {
             Real sold history needs eBay&apos;s Marketplace Insights API, which
             is a separate approval from the Browse access this app already has.
             Until it&apos;s granted, treat these as &ldquo;what sellers are
-            asking&rdquo; — not &ldquo;what buyers paid&rdquo;.
+            asking&rdquo; — not &ldquo;what buyers paid&rdquo;. That also means
+            the &ldquo;Sold within&rdquo; window is ignored right now, and
+            {sort === "recent"
+              ? " “Newest first” is sorted by listing date, not sale date."
+              : " any date-based sort or filter reflects listing date, not sale date."}
           </span>
         </p>
       )}
