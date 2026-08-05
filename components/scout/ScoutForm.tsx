@@ -149,6 +149,11 @@ export function ScoutForm({
             <option value={60}>Last 60 days</option>
             <option value={90}>Last 3 months</option>
           </select>
+          <p className="mt-1 text-xs text-ink-2">
+            Only applies once sold data is available — eBay hasn&apos;t
+            approved that for this app yet, so this is ignored for now (see
+            note under the results).
+          </p>
         </div>
 
         <div>
@@ -245,7 +250,7 @@ export function ScoutForm({
             onChange={(e) => setSort(e.target.value as ScoutQuery["sort"])}
             className={inputCls}
           >
-            <option value="recent">Most recently sold</option>
+            <option value="recent">Newest first</option>
             <option value="feedback_asc">Newest sellers first</option>
             <option value="price_asc">Price: low to high</option>
             <option value="price_desc">Price: high to low</option>
