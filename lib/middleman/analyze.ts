@@ -13,6 +13,7 @@
 import { cents, median, percentile, trimOutliers } from "@/lib/stats";
 import { computeFees, type FeeBreakdown } from "@/lib/fees/engine";
 import { FEE_PRESETS, type FeePreset } from "@/lib/fees/presets";
+import { classifyCompetitionPressure } from "@/lib/shared/competition";
 
 export type MiddlemanInput = {
   /** wholesale price your supplier friend quoted, in supplierCurrency units */
@@ -81,13 +82,8 @@ export type MiddlemanVerdict = {
   tips: string[];
 };
 
-/** classify competitor pressure by count */
-function pressure(count: number): MiddlemanAnalysis["competitorPressure"] {
-  if (count === 0) return "NONE";
-  if (count < 5) return "THIN";
-  if (count < 40) return "HEALTHY";
-  return "SATURATED";
-}
+/** classify competitor pressure by count — shared with Trends (lib/shared/competition.ts) */
+const pressure = classifyCompetitionPressure;
 
 /**
  * Given the competitor floor and every other cost, solve for the highest

@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, Handshake, Radar, ShoppingCart, Sprout } from "lucide-react";
+import {
+  ArrowRight,
+  Handshake,
+  Radar,
+  ShoppingCart,
+  Sprout,
+  TrendingUp,
+} from "lucide-react";
 
 export default function LandingPage() {
   return (
@@ -96,6 +103,29 @@ export default function LandingPage() {
           </p>
           <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-warn-text">
             Find winners <ArrowRight size={14} aria-hidden />
+          </span>
+        </Link>
+
+        <Link
+          href="/trends"
+          className="group flex flex-col gap-3 bg-bg p-6 hover:bg-surface md:col-span-3"
+        >
+          <div className="flex items-center gap-2">
+            <TrendingUp size={18} className="text-riso-blue" aria-hidden />
+            <span className="font-display text-lg font-black uppercase">
+              Trends
+            </span>
+          </div>
+          <p className="max-w-2xl text-sm text-ink-2">
+            <em>Which of my product ideas is actually worth betting on?</em>{" "}
+            Compare a few candidates on live eBay market composition — active
+            listings, price spread, top brands, and whether newcomers are
+            still breaking in. Not a fake &ldquo;trend score&rdquo; — eBay
+            doesn&apos;t publish search-volume data, so we don&apos;t pretend
+            to have it.
+          </p>
+          <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-riso-blue">
+            Compare ideas <ArrowRight size={14} aria-hidden />
           </span>
         </Link>
       </div>

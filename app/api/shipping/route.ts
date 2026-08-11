@@ -6,7 +6,7 @@ import {
   computeChargeableWeightGrams,
   computeVolumetricWeightGrams,
 } from "@/lib/shipping/volumetric";
-import type { ShippingQuote, ShippingQuoteRequest } from "@/lib/shipping/types";
+import type { ShippingQuote } from "@/lib/shipping/types";
 
 const ShippingRequestSchema = z.object({
   actualWeightGrams: z
