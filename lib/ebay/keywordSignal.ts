@@ -75,7 +75,12 @@ export async function fetchKeywordSignal(keyword: string): Promise<KeywordSignal
   const params = new URLSearchParams({
     q: keyword,
     limit: "200",
-    fieldgroups: "ASPECT_REFINEMENTS",
+    // eBay's fieldgroups param REPLACES the default rather than adding to
+    // it — MATCHING_ITEMS must be listed explicitly or itemSummaries (and
+    // therefore price/seller data) comes back empty even though aspect
+    // refinements still populate. Caught in production: priceStats and
+    // newSellerPct were silently null on every live query until this fix.
+    fieldgroups: "ASPECT_REFINEMENTS,MATCHING_ITEMS",
   });
   const res = await ebayFetch(`/buy/browse/v1/item_summary/search?${params}`);
   const data = (await res.json()) as SearchResponse;
