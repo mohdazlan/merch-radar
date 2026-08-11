@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   },
   { label: "Middleman", href: "/middleman", match: /^\/middleman/ },
   { label: "Scout", href: "/scout", match: /^\/scout/ },
+  { label: "Trends", href: "/trends", match: /^\/trends/ },
 ];
 
 export function Header() {
