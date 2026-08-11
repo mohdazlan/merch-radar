@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2, Search } from "lucide-react";
+import { ShippingEstimator } from "@/components/shared/ShippingEstimator";
 import { FEE_PRESETS } from "@/lib/fees/presets";
 import type { Condition } from "@/lib/ebay/DemandSource";
 
@@ -189,25 +190,33 @@ export function SourcingForm({
             ))}
           </select>
         </div>
-        <div className="flex items-end md:col-span-2 lg:col-span-2">
-          <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 border border-accent bg-accent/15 px-6 text-sm font-bold uppercase tracking-wide text-ink hover:bg-accent/25 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? (
-              <>
-                <Loader2 size={15} className="animate-spin" aria-hidden />
-                Analyzing…
-              </>
-            ) : (
-              <>
-                <Search size={15} aria-hidden />
-                Analyze
-              </>
-            )}
-          </button>
-        </div>
+      </div>
+
+      <div className="mt-4">
+        <ShippingEstimator
+          destCountry="US"
+          onEstimate={(usd) => setShippingCost(usd.toFixed(2))}
+        />
+      </div>
+
+      <div className="mt-4 flex items-end">
+        <button
+          type="submit"
+          disabled={loading}
+          className="inline-flex h-11 w-full items-center justify-center gap-2 border border-accent bg-accent/15 px-6 text-sm font-bold uppercase tracking-wide text-ink hover:bg-accent/25 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? (
+            <>
+              <Loader2 size={15} className="animate-spin" aria-hidden />
+              Analyzing…
+            </>
+          ) : (
+            <>
+              <Search size={15} aria-hidden />
+              Analyze
+            </>
+          )}
+        </button>
       </div>
     </form>
   );
