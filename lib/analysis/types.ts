@@ -36,5 +36,9 @@ export type CompsResult = {
         p75: number;
         series: { date: string; price: number }[];
       }
+    | {
+        status: "BROWSE_ESTIMATE";
+        count: number;
+      }
     | { status: "UNAVAILABLE" };
 };

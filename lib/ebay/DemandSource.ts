@@ -33,9 +33,18 @@ export type SoldComps = {
   fetchedAt: string;
 };
 
+export type SoldBrowseEstimate = {
+  status: "BROWSE_ESTIMATE";
+  provenance: "LIVE" | "DEMO";
+  soldCount: number;
+  fetchedAt: string;
+};
+
 export type SoldUnavailable = { status: "UNAVAILABLE" };
 
 export interface DemandSource {
   getActive(q: SearchQuery): Promise<ActiveComps>;
-  getSold(q: SearchQuery): Promise<SoldComps | SoldUnavailable>;
+  getSold(
+    q: SearchQuery,
+  ): Promise<SoldComps | SoldBrowseEstimate | SoldUnavailable>;
 }

@@ -1,4 +1,4 @@
-import type { ActiveComps, SoldComps } from "@/lib/ebay/DemandSource";
+import type { ActiveComps, SoldBrowseEstimate, SoldComps } from "@/lib/ebay/DemandSource";
 
 /**
  * Deterministic synthetic comps for Demo Mode. Every surface rendering these
@@ -37,7 +37,7 @@ export type FixtureProduct = {
   key: string;
   title: string;
   active: ActiveComps;
-  sold: SoldComps | { status: "UNAVAILABLE" };
+  sold: SoldComps | SoldBrowseEstimate | { status: "UNAVAILABLE" };
 };
 
 function active(prices: number[]): ActiveComps {

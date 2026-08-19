@@ -41,6 +41,10 @@ export function analyze(
   input: AnalysisInput,
 ): Analysis | NoComps {
   const soldOk = comps.sold.status === "OK" ? comps.sold : null;
+  const soldEstimate =
+    comps.sold.status === "BROWSE_ESTIMATE" ? comps.sold : null;
+  const hasSoldCount = soldOk ?? soldEstimate;
+
   const forecast = soldOk ? fitDecay(soldOk.series) : null;
   const decaySlope =
     forecast && forecast.status === "OK" ? forecast.slopePer90d : null;
@@ -51,7 +55,7 @@ export function analyze(
     shippingCost: input.shippingCost,
     activeCount: comps.active.count,
     activePrices: comps.active.prices,
-    soldCount: soldOk ? soldOk.count : null,
+    soldCount: hasSoldCount ? hasSoldCount.count : null,
     soldPrices: soldOk ? soldOk.prices : null,
     decaySlope,
     preset,
@@ -69,7 +73,7 @@ export function analyze(
   const dataAgeDays =
     (Date.now() - Date.parse(comps.fetchedAt)) / 86_400_000 || 0;
   const confidence = computeConfidence({
-    soldCount: soldOk ? soldOk.count : null,
+    soldCount: hasSoldCount ? hasSoldCount.count : null,
     soldPrices: soldOk ? soldOk.prices : null,
     dataAgeDays: Math.max(dataAgeDays, 0),
   });

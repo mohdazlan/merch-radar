@@ -1,6 +1,8 @@
 # MERCH RADAR — Build Spec v2
 ### One app, two surfaces: **Radar** (what to make) + **ApexSourcing Engine** (what to buy)
 
+> **Status: historical/frozen.** This spec covers only the original M0–M8 milestones (Radar + Sourcing/Manifest). Four more surfaces — Middleman, Scout, HDLR, Trends — plus the shipping estimator were built afterward and are **not** described here; see [`PROJECT-REFERENCE.md`](./PROJECT-REFERENCE.md) for those and for the current state of the whole app.
+
 > **How to use:** Feed this whole file to Claude Code as the project brief. It supersedes v1. Build in the milestone order in §12. The architectural rules in §3 and the design constraints in §10 are non-negotiable — they are what stop this from becoming another generic AI dashboard, and what stop the numbers from being untrustworthy.
 
 ---

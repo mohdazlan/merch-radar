@@ -36,21 +36,31 @@ async function fromSource(
     source.getActive(q),
     source.getSold(q),
   ]);
+
+  let soldResult: CompsResult["sold"];
+  if (sold.status === "OK") {
+    soldResult = {
+      status: "OK",
+      count: sold.soldCount,
+      ...summarize(sold.prices),
+      series: sold.series,
+    };
+  } else if (sold.status === "BROWSE_ESTIMATE") {
+    soldResult = {
+      status: "BROWSE_ESTIMATE",
+      count: sold.soldCount,
+    };
+  } else {
+    soldResult = { status: "UNAVAILABLE" };
+  }
+
   return {
     query: q.q,
     provenance,
     degraded,
     fetchedAt: new Date().toISOString(),
     active: { count: active.activeCount, ...summarize(active.prices) },
-    sold:
-      sold.status === "OK"
-        ? {
-            status: "OK",
-            count: sold.soldCount,
-            ...summarize(sold.prices),
-            series: sold.series,
-          }
-        : { status: "UNAVAILABLE" },
+    sold: soldResult,
   };
 }
 

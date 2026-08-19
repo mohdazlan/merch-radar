@@ -151,4 +151,25 @@ describe("computeConfidence — data quality, not enthusiasm", () => {
     expect(c.lowSample).toBe(true);
     expect(c.confidence).toBeLessThanOrEqual(LOW_SAMPLE_CAP);
   });
+
+  it("scores browse-estimate (count without prices) better than fully missing", () => {
+    const missing = computeConfidence({ soldCount: null, soldPrices: null });
+    const browseEstimate = computeConfidence({
+      soldCount: 50,
+      soldPrices: null,
+    });
+    expect(browseEstimate.lowSample).toBe(false);
+    expect(browseEstimate.confidence).toBeGreaterThan(missing.confidence);
+  });
+
+  it("fires demand rules when browse-estimate provides STR and daysToFlip", () => {
+    const r = evaluateVerdict({
+      roi: 0.5,
+      netProfit: 40,
+      sellThroughRate: 0.65,
+      daysToFlip: 15,
+      decaySlope: null,
+    });
+    expect(r.ruleId).toBe("R4_STRONG_BUY");
+  });
 });

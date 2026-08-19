@@ -24,6 +24,7 @@ export function MetricsGrid({
         ? "MODELED"
         : "MODELED";
   const soldMissing = m.sellThroughRate === null;
+  const browseEstimate = comps.sold.status === "BROWSE_ESTIMATE";
 
   const tiles: {
     label: string;
@@ -50,12 +51,17 @@ export function MetricsGrid({
       label: "Sell-through rate",
       value: soldMissing ? "—" : pct(m.sellThroughRate!),
       provenance: soldMissing ? "UNAVAILABLE" : estProv,
-      note: soldMissing ? "requires sold data" : "sold ÷ (sold + active)",
+      note: soldMissing
+        ? "requires sold data"
+        : browseEstimate
+          ? "from listing sold counts"
+          : "sold ÷ (sold + active)",
     },
     {
       label: "Days to flip",
       value: m.daysToFlip === null ? "—" : String(Math.round(m.daysToFlip)),
       provenance: m.daysToFlip === null ? "UNAVAILABLE" : estProv,
+      note: browseEstimate && m.daysToFlip !== null ? "estimated from listing counts" : undefined,
     },
     {
       label: "Profit / day",

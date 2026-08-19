@@ -1,11 +1,16 @@
 # Merch Radar
 
-One app, two surfaces, one eBay demand engine:
+One app, seven surfaces, one eBay demand engine:
 
 - **Radar** (`/radar`) — what to make and by when. Seasonal/event demand with launch-by dates for POD sellers.
-- **ApexSourcing Engine** (`/sourcing`, `/sourcing/manifest`) — what's worth buying today. Comps, sell-through, fee-true margin, and a rule-based verdict for resellers.
+- **Sourcing** (`/sourcing`) — what's worth buying today. Comps, sell-through, fee-true margin, and a rule-based verdict for resellers.
+- **Manifest** (`/sourcing/manifest`) — bulk pallet/manifest analyzer; scores every line of a liquidation lot at once.
+- **Middleman** (`/middleman`) — margin + undercut pricing when your supplier is a friend with elastic capacity (wholesale/FX flips), not a one-shot pallet buy.
+- **Scout** (`/scout`) — finds *already-selling* items from low-feedback sellers, i.e. products that carry themselves without reputation.
+- **HDLR** (`/hdlr`) — a five-gate qualification check (demand, new-seller, risk, competition, supplier) before you commit capital to a Scout find.
+- **Trends** (`/trends`) — compares 1–5 keyword ideas on real eBay market composition (active supply, price spread, top attributes, new-seller share). Not a fake "search volume" score — see [`PROJECT-REFERENCE.md`](./PROJECT-REFERENCE.md#57-trends-trends--added-post-spec-pr-7-fixed-in-pr-89).
 
-Full product/design context lives in [`PRODUCT.md`](./PRODUCT.md), [`DESIGN.md`](./DESIGN.md), and the build spec [`MERCH-RADAR-BUILD-SPEC-v2.md`](./MERCH-RADAR-BUILD-SPEC-v2.md).
+Full product/design context lives in [`PRODUCT.md`](./PRODUCT.md), [`DESIGN.md`](./DESIGN.md), the original build spec [`MERCH-RADAR-BUILD-SPEC-v2.md`](./MERCH-RADAR-BUILD-SPEC-v2.md) (covers Radar + Sourcing/Manifest only), and [`PROJECT-REFERENCE.md`](./PROJECT-REFERENCE.md) (covers everything, including the four surfaces built after the spec).
 
 ## Getting started
 
@@ -16,7 +21,9 @@ pnpm exec prisma db push   # creates the local SQLite dev.db
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). **Demo Mode is on by default**, so the app is fully functional with zero API keys — every eBay call is served from fixtures and every surface shows the amber `DEMO DATA` badge.
+Open [http://localhost:3000](http://localhost:3000). With no API keys configured, every surface automatically runs on fixtures and shows the amber `DEMO DATA` badge. **Note:** the Demo Mode toggle itself now defaults to **off** in the UI (it flips to fixtures automatically whenever `EBAY_CLIENT_ID`/`EBAY_CLIENT_SECRET` aren't set or a live call fails — see `components/shared/DemoModeProvider.tsx`) — this changed after eBay keys went live in production, so a first-time visitor to the deployed app sees real marketplace data by default, not synthetic fixtures. Locally, with no keys in `.env`, you'll still see demo data even with the toggle off, since live calls aren't possible.
+
+Live calls degrade gracefully and independently per item, not all-or-nothing: a failed live lookup for one Manifest row, one Trends keyword, or one shipping quote falls back to a `degraded`-flagged demo value for just that item, while the rest of the batch stays live.
 
 ```bash
 pnpm test     # Vitest — the pure engines in lib/ (fees, verdict, forecast, manifest parsing)

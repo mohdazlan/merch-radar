@@ -66,6 +66,20 @@ describe("computeMetrics", () => {
     expect(m.estSellPriceSource).toBe("ACTIVE_DISCOUNTED");
   });
 
+  it("computes STR and daysToFlip from browse estimate (count only, no sold prices)", () => {
+    const m = computeMetrics({
+      ...base,
+      soldCount: 50,
+      soldPrices: null,
+    });
+    if (m.status !== "OK") throw new Error("expected OK");
+    expect(m.sellThroughRate).toBeCloseTo(50 / 88, 6);
+    expect(m.daysToFlip).toBeCloseTo((90 / 50) * 38, 4);
+    expect(m.capitalPerDay).not.toBeNull();
+    expect(m.estSellPrice).toBe(220);
+    expect(m.estSellPriceSource).toBe("ACTIVE_DISCOUNTED");
+  });
+
   it("returns NO_COMPS when there is nothing to price against", () => {
     const m = computeMetrics({
       ...base,

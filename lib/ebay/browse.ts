@@ -3,6 +3,7 @@ import type {
   Condition,
   DemandSource,
   SearchQuery,
+  SoldBrowseEstimate,
   SoldComps,
   SoldUnavailable,
 } from "@/lib/ebay/DemandSource";
@@ -16,29 +17,65 @@ const CONDITION_IDS: Record<Condition, string> = {
   FOR_PARTS: "7000",
 };
 
+type EstimatedAvailability = {
+  estimatedSoldQuantity?: number;
+  estimatedAvailableQuantity?: number;
+};
+
 type BrowseItem = {
   price?: { value?: string; currency?: string };
   shippingOptions?: { shippingCost?: { value?: string } }[];
+  estimatedAvailabilities?: EstimatedAvailability[];
+};
+
+type BrowseSearchResult = {
+  total?: number;
+  itemSummaries?: BrowseItem[];
 };
 
 /**
- * Always-available live source: active supply from the Browse API.
- * Sold data is UNAVAILABLE here — that honesty is the point (§8): the
- * Insights adapter provides it only when eBay has granted access.
+ * Always-available live source: active supply + per-listing sold counts
+ * from the Browse API. When Insights isn't granted, the sold count from
+ * estimatedAvailabilities is the best demand signal available — it's the
+ * same "N sold" the user sees on every eBay listing page.
+ *
+ * A single API call serves both getActive() and getSold() via a shared
+ * promise so parallel callers don't double-fetch.
  */
 export class EbayBrowseSource implements DemandSource {
-  async getActive(q: SearchQuery): Promise<ActiveComps> {
-    const params = new URLSearchParams({ q: q.q, limit: "200" });
+  private pending = new Map<string, Promise<BrowseSearchResult>>();
+
+  private cacheKey(q: SearchQuery): string {
+    return `${q.q}|${q.condition ?? ""}`;
+  }
+
+  private fetchSearch(q: SearchQuery): Promise<BrowseSearchResult> {
+    const key = this.cacheKey(q);
+    let p = this.pending.get(key);
+    if (!p) {
+      p = this.doSearch(q);
+      this.pending.set(key, p);
+    }
+    return p;
+  }
+
+  private async doSearch(q: SearchQuery): Promise<BrowseSearchResult> {
+    const params = new URLSearchParams({
+      q: q.q,
+      limit: "200",
+      fieldgroups: "EXTENDED",
+    });
     if (q.condition) {
       params.set("filter", `conditionIds:{${CONDITION_IDS[q.condition]}}`);
     }
     const res = await ebayFetch(
       `/buy/browse/v1/item_summary/search?${params.toString()}`,
     );
-    const data = (await res.json()) as {
-      total?: number;
-      itemSummaries?: BrowseItem[];
-    };
+    return (await res.json()) as BrowseSearchResult;
+  }
+
+  async getActive(q: SearchQuery): Promise<ActiveComps> {
+    const data = await this.fetchSearch(q);
     const prices = (data.itemSummaries ?? [])
       .map((i) => Number(i.price?.value))
       .filter((p) => Number.isFinite(p) && p > 0);
@@ -51,7 +88,26 @@ export class EbayBrowseSource implements DemandSource {
     };
   }
 
-  async getSold(): Promise<SoldComps | SoldUnavailable> {
-    return { status: "UNAVAILABLE" };
+  async getSold(
+    q: SearchQuery,
+  ): Promise<SoldComps | SoldBrowseEstimate | SoldUnavailable> {
+    const data = await this.fetchSearch(q);
+    const items = data.itemSummaries ?? [];
+    let totalSold = 0;
+    for (const item of items) {
+      for (const ea of item.estimatedAvailabilities ?? []) {
+        const qty = ea.estimatedSoldQuantity;
+        if (typeof qty === "number" && qty > 0) {
+          totalSold += qty;
+        }
+      }
+    }
+    if (totalSold === 0) return { status: "UNAVAILABLE" };
+    return {
+      status: "BROWSE_ESTIMATE",
+      provenance: "LIVE",
+      soldCount: totalSold,
+      fetchedAt: new Date().toISOString(),
+    };
   }
 }

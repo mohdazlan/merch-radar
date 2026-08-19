@@ -2,6 +2,7 @@ import type {
   ActiveComps,
   DemandSource,
   SearchQuery,
+  SoldBrowseEstimate,
   SoldComps,
   SoldUnavailable,
 } from "@/lib/ebay/DemandSource";
@@ -14,7 +15,7 @@ export class FixtureSource implements DemandSource {
     return fixture.active;
   }
 
-  async getSold(q: SearchQuery): Promise<SoldComps | SoldUnavailable> {
+  async getSold(q: SearchQuery): Promise<SoldComps | SoldBrowseEstimate | SoldUnavailable> {
     const fixture = findFixture(q.q) ?? DEFAULT_FIXTURE;
     return fixture.sold;
   }

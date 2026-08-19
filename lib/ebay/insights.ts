@@ -2,6 +2,7 @@ import type {
   ActiveComps,
   DemandSource,
   SearchQuery,
+  SoldBrowseEstimate,
   SoldComps,
   SoldUnavailable,
 } from "@/lib/ebay/DemandSource";
@@ -16,8 +17,9 @@ type InsightsSale = {
 
 /**
  * Marketplace Insights API (90-day sold). Requires eBay approval — gated by
- * EBAY_INSIGHTS_ENABLED=true. When not granted, the composite source degrades
- * to Browse-only and sold stays UNAVAILABLE; it is never fabricated.
+ * EBAY_INSIGHTS_ENABLED=true. When not granted, the composite source falls
+ * back to the Browse API's estimatedSoldQuantity (listing-level sold counts)
+ * which gives a demand signal without individual sold prices or dates.
  */
 export class EbayInsightsSource implements DemandSource {
   private browse = new EbayBrowseSource();
@@ -26,9 +28,11 @@ export class EbayInsightsSource implements DemandSource {
     return this.browse.getActive(q);
   }
 
-  async getSold(q: SearchQuery): Promise<SoldComps | SoldUnavailable> {
+  async getSold(
+    q: SearchQuery,
+  ): Promise<SoldComps | SoldBrowseEstimate | SoldUnavailable> {
     if (process.env.EBAY_INSIGHTS_ENABLED !== "true") {
-      return { status: "UNAVAILABLE" };
+      return this.browse.getSold(q);
     }
     const params = new URLSearchParams({ q: q.q, limit: "100" });
     const res = await ebayFetch(

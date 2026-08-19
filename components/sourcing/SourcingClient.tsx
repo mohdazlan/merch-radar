@@ -124,7 +124,7 @@ export function SourcingClient() {
           roi: m.roi,
           str: m.sellThroughRate,
           activeCount: state.comps.active.count,
-          soldCount: state.comps.sold.status === "OK" ? state.comps.sold.count : null,
+          soldCount: state.comps.sold.status !== "UNAVAILABLE" ? state.comps.sold.count : null,
           decaySlope: analysis.decaySlope,
           daysToFlip: m.daysToFlip,
           capitalPerDay: m.capitalPerDay,
@@ -189,7 +189,9 @@ export function SourcingClient() {
               {state.comps.active.count} active ·{" "}
               {state.comps.sold.status === "OK"
                 ? `${state.comps.sold.count} sold/90d`
-                : "sold unavailable"}
+                : state.comps.sold.status === "BROWSE_ESTIMATE"
+                  ? `~${state.comps.sold.count} sold (listing counts)`
+                  : "sold unavailable"}
             </span>
             {state.form.qty > 1 && (
               <span className="num">

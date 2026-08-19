@@ -33,6 +33,10 @@ function buildRows() {
   return FIXTURE_PRODUCTS.map((p) => {
     const buy = DEMO_BUYS[p.key] ?? { buyCost: 10, shippingCost: 5 };
     const soldOk = p.sold.status === "OK" ? p.sold : null;
+    const soldEstimate =
+      p.sold.status === "BROWSE_ESTIMATE" ? p.sold : null;
+    const hasSoldCount = soldOk ?? soldEstimate;
+
     const forecast = soldOk ? fitDecay(soldOk.series) : null;
     const decaySlope =
       forecast && forecast.status === "OK" ? forecast.slopePer90d : null;
@@ -42,7 +46,7 @@ function buildRows() {
       shippingCost: buy.shippingCost,
       activeCount: p.active.activeCount,
       activePrices: p.active.prices,
-      soldCount: soldOk ? soldOk.soldCount : null,
+      soldCount: hasSoldCount ? hasSoldCount.soldCount : null,
       soldPrices: soldOk ? soldOk.prices : null,
       decaySlope,
       preset: DEFAULT_PRESET,
@@ -57,7 +61,7 @@ function buildRows() {
       decaySlope,
     });
     const confidence = computeConfidence({
-      soldCount: soldOk ? soldOk.soldCount : null,
+      soldCount: hasSoldCount ? hasSoldCount.soldCount : null,
       soldPrices: soldOk ? soldOk.prices : null,
       dataAgeDays: 1,
     });
