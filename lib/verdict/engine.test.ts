@@ -162,6 +162,16 @@ describe("computeConfidence — data quality, not enthusiasm", () => {
     expect(browseEstimate.confidence).toBeGreaterThan(missing.confidence);
   });
 
+  it("uses distinct sold-backed listings, not lifetime units, for sample quality", () => {
+    const c = computeConfidence({
+      soldCount: null,
+      soldPrices: [179.99],
+      sampleCount: 1,
+    });
+    expect(c.lowSample).toBe(true);
+    expect(c.confidence).toBeLessThanOrEqual(LOW_SAMPLE_CAP);
+  });
+
   it("fires demand rules when browse-estimate provides STR and daysToFlip", () => {
     const r = evaluateVerdict({
       roi: 0.5,

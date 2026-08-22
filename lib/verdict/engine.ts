@@ -34,6 +34,8 @@ export type ConfidenceInput = {
   /** null = sold data unavailable */
   soldCount: number | null;
   soldPrices: number[] | null;
+  /** distinct observations backing the price; defaults to soldCount */
+  sampleCount?: number;
   /** days since comps were fetched, default 0 (fresh) */
   dataAgeDays?: number;
   /** 0–1 similarity of comp titles to the query, default 0.8 */
@@ -60,8 +62,9 @@ export const LOW_SAMPLE_CAP = 40;
 export function computeConfidence(input: ConfidenceInput): Confidence {
   const soldCount = input.soldCount ?? 0;
   const soldPrices = input.soldPrices ?? [];
+  const sampleCount = input.sampleCount ?? soldCount;
 
-  const sampleScore = Math.min(soldCount / 30, 1);
+  const sampleScore = Math.min(sampleCount / 30, 1);
 
   let varianceScore = 0;
   if (soldPrices.length >= 2) {
@@ -80,7 +83,7 @@ export function computeConfidence(input: ConfidenceInput): Confidence {
       100,
   );
 
-  const lowSample = soldCount < LOW_SAMPLE_THRESHOLD;
+  const lowSample = sampleCount < LOW_SAMPLE_THRESHOLD;
   if (lowSample) confidence = Math.min(confidence, LOW_SAMPLE_CAP);
 
   return { confidence, lowSample };

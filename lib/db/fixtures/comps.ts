@@ -1,4 +1,9 @@
-import type { ActiveComps, SoldBrowseEstimate, SoldComps } from "@/lib/ebay/DemandSource";
+import type {
+  ActiveComps,
+  SoldBrowseHistory,
+  SoldComps,
+  SoldReference,
+} from "@/lib/ebay/DemandSource";
 
 /**
  * Deterministic synthetic comps for Demo Mode. Every surface rendering these
@@ -37,7 +42,7 @@ export type FixtureProduct = {
   key: string;
   title: string;
   active: ActiveComps;
-  sold: SoldComps | SoldBrowseEstimate | { status: "UNAVAILABLE" };
+  sold: SoldComps | SoldBrowseHistory | { status: "UNAVAILABLE" };
 };
 
 function active(prices: number[]): ActiveComps {
@@ -50,13 +55,29 @@ function active(prices: number[]): ActiveComps {
   };
 }
 
-function sold(s: { date: string; price: number }[]): SoldComps {
+function sold(
+  title: string,
+  s: { date: string; price: number }[],
+): SoldComps {
+  const references: SoldReference[] = s.map((point, index) => ({
+    itemId: `demo-sale-${index + 1}`,
+    title,
+    price: point.price,
+    currency: "USD",
+    soldQuantity: 1,
+    soldDate: point.date,
+    itemWebUrl: null,
+    sellerName: `demo-seller-${(index % 4) + 1}`,
+    condition: null,
+    priceBasis: "COMPLETED_SALE",
+  }));
   return {
     status: "OK",
     provenance: "DEMO",
     soldCount: s.length,
     prices: s.map((p) => p.price),
     series: s,
+    references,
     fetchedAt: FIXTURE_FETCHED_AT,
   };
 }
@@ -68,7 +89,7 @@ const switchOled: FixtureProduct = {
   active: active(
     Array.from({ length: 38 }, (_, i) => 248 + Math.sin(i * 1.7) * 14),
   ),
-  sold: sold(series(74, 244, 0.02, 9)),
+  sold: sold("Nintendo Switch OLED Console", series(74, 244, 0.02, 9)),
 };
 
 /** saturating market: price decaying, active supply deep */
@@ -78,7 +99,7 @@ const stanleyQuencher: FixtureProduct = {
   active: active(
     Array.from({ length: 120 }, (_, i) => 27 + Math.sin(i * 1.3) * 4),
   ),
-  sold: sold(series(41, 34, -0.07, 2.2)),
+  sold: sold("Stanley Quencher 40oz Tumbler", series(41, 34, -0.07, 2.2)),
 };
 
 /** dead stock risk: low sell-through, deep queue */
@@ -88,7 +109,7 @@ const funkoGrogu: FixtureProduct = {
   active: active(
     Array.from({ length: 64 }, (_, i) => 11 + Math.sin(i * 2.1) * 2),
   ),
-  sold: sold(series(9, 12.5, -0.01, 1.1)),
+  sold: sold("Funko Pop! Grogu #1105", series(9, 12.5, -0.01, 1.1)),
 };
 
 /** thin data: n=4 sold — must trigger the forecast refusal state */
@@ -96,7 +117,7 @@ const pyrexBowl: FixtureProduct = {
   key: "vintage pyrex butterfly gold bowl",
   title: "Vintage Pyrex Butterfly Gold Bowl",
   active: active([28.5, 32, 24.99, 39.95, 27, 31.5]),
-  sold: sold(series(4, 30, 0.03, 3)),
+  sold: sold("Vintage Pyrex Butterfly Gold Bowl", series(4, 30, 0.03, 3)),
 };
 
 /** insights-not-granted shape: active only, sold UNAVAILABLE */
@@ -109,12 +130,43 @@ const airpodsPro: FixtureProduct = {
   sold: { status: "UNAVAILABLE" },
 };
 
+/** Browse-only example matching the complaint attached to source r1.pdf. */
+const royalBerkley: FixtureProduct = {
+  key: "royal berkley",
+  title: "Royal Berkey 3.25 Gal Stainless Steel Housing",
+  active: active([73.92, 89.99, 129.95, 179.99, 184.5, 199.99]),
+  sold: {
+    status: "BROWSE_HISTORY",
+    provenance: "DEMO",
+    soldCount: 1589,
+    prices: [179.99],
+    references: [
+      {
+        itemId: "demo-royal-berkley-1589",
+        title:
+          "Royal Berkey 3.25 Gal Stainless Steel Housing Only - Open Box w/ Spigot",
+        price: 179.99,
+        currency: "USD",
+        soldQuantity: 1589,
+        soldDate: null,
+        itemWebUrl: null,
+        sellerName: "demo-aquatreasuresemporium",
+        condition: "Open box",
+        priceBasis: "CURRENT_LISTING_WITH_SALES",
+      },
+    ],
+    scannedListingCount: 6,
+    fetchedAt: FIXTURE_FETCHED_AT,
+  },
+};
+
 export const FIXTURE_PRODUCTS: FixtureProduct[] = [
   switchOled,
   stanleyQuencher,
   funkoGrogu,
   pyrexBowl,
   airpodsPro,
+  royalBerkley,
 ];
 
 export function findFixture(q: string): FixtureProduct | undefined {

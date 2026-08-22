@@ -3,14 +3,15 @@ import type {
   Condition,
   DemandSource,
   SearchQuery,
-  SoldBrowseEstimate,
+  SoldBrowseHistory,
   SoldComps,
+  SoldReference,
   SoldUnavailable,
 } from "@/lib/ebay/DemandSource";
 import { ebayFetch } from "@/lib/ebay/auth";
 
 /** Browse API condition ids: 1000 new, 2750/3000 used tiers, 7000 parts */
-const CONDITION_IDS: Record<Condition, string> = {
+export const CONDITION_IDS: Record<Condition, string> = {
   NEW: "1000",
   USED_LIKE_NEW: "2750",
   USED_GOOD: "3000",
@@ -23,8 +24,12 @@ type EstimatedAvailability = {
 };
 
 type BrowseItem = {
+  itemId?: string;
+  title?: string;
   price?: { value?: string; currency?: string };
-  shippingOptions?: { shippingCost?: { value?: string } }[];
+  itemWebUrl?: string;
+  condition?: string;
+  seller?: { username?: string };
   estimatedAvailabilities?: EstimatedAvailability[];
 };
 
@@ -32,6 +37,27 @@ type BrowseSearchResult = {
   total?: number;
   itemSummaries?: BrowseItem[];
 };
+
+type BrowseItemsResult = {
+  items?: BrowseItem[];
+};
+
+/** getItems accepts at most 20 REST item IDs per call. */
+export const BROWSE_DETAIL_SAMPLE_LIMIT = 20;
+
+function soldQuantity(item: BrowseItem): number {
+  // Availability can have more than one delivery container. Use the largest
+  // reported value so the same inventory is not double-counted.
+  return Math.max(
+    0,
+    ...(item.estimatedAvailabilities ?? []).map((availability) => {
+      const quantity = availability.estimatedSoldQuantity;
+      return typeof quantity === "number" && Number.isFinite(quantity)
+        ? Math.max(Math.floor(quantity), 0)
+        : 0;
+    }),
+  );
+}
 
 /**
  * Always-available live source: active supply + per-listing sold counts
@@ -63,7 +89,6 @@ export class EbayBrowseSource implements DemandSource {
     const params = new URLSearchParams({
       q: q.q,
       limit: "200",
-      fieldgroups: "EXTENDED",
     });
     if (q.condition) {
       params.set("filter", `conditionIds:{${CONDITION_IDS[q.condition]}}`);
@@ -72,6 +97,22 @@ export class EbayBrowseSource implements DemandSource {
       `/buy/browse/v1/item_summary/search?${params.toString()}`,
     );
     return (await res.json()) as BrowseSearchResult;
+  }
+
+  private async fetchDetails(items: BrowseItem[]): Promise<BrowseItem[]> {
+    const itemIds = items
+      .map((item) => item.itemId)
+      .filter((itemId): itemId is string => Boolean(itemId))
+      .slice(0, BROWSE_DETAIL_SAMPLE_LIMIT);
+    if (itemIds.length === 0) return [];
+
+    const params = new URLSearchParams({
+      item_ids: itemIds.join(","),
+      fieldgroups: "COMPACT",
+    });
+    const res = await ebayFetch(`/buy/browse/v1/item?${params.toString()}`);
+    const data = (await res.json()) as BrowseItemsResult;
+    return data.items ?? [];
   }
 
   async getActive(q: SearchQuery): Promise<ActiveComps> {
@@ -90,23 +131,61 @@ export class EbayBrowseSource implements DemandSource {
 
   async getSold(
     q: SearchQuery,
-  ): Promise<SoldComps | SoldBrowseEstimate | SoldUnavailable> {
+  ): Promise<SoldComps | SoldBrowseHistory | SoldUnavailable> {
     const data = await this.fetchSearch(q);
-    const items = data.itemSummaries ?? [];
-    let totalSold = 0;
-    for (const item of items) {
-      for (const ea of item.estimatedAvailabilities ?? []) {
-        const qty = ea.estimatedSoldQuantity;
-        if (typeof qty === "number" && qty > 0) {
-          totalSold += qty;
+    const summaries = (data.itemSummaries ?? []).slice(
+      0,
+      BROWSE_DETAIL_SAMPLE_LIMIT,
+    );
+
+    // Search returns ItemSummary, which does not include sold availability.
+    // Hydrate the best-match sample through the bulk Item endpoint, where
+    // estimatedSoldQuantity is actually defined.
+    const details = await this.fetchDetails(summaries).catch(() => []);
+    const summaryById = new Map(
+      summaries
+        .filter((item) => item.itemId)
+        .map((item) => [item.itemId as string, item]),
+    );
+
+    const references: SoldReference[] = details
+      .map((detail): SoldReference | null => {
+        const quantity = soldQuantity(detail);
+        const summary = detail.itemId
+          ? summaryById.get(detail.itemId)
+          : undefined;
+        const price = Number(detail.price?.value ?? summary?.price?.value);
+        if (quantity <= 0 || !Number.isFinite(price) || price <= 0) {
+          return null;
         }
-      }
-    }
-    if (totalSold === 0) return { status: "UNAVAILABLE" };
+        return {
+          itemId: detail.itemId ?? summary?.itemId ?? crypto.randomUUID(),
+          title: summary?.title ?? detail.title ?? "(untitled eBay listing)",
+          price,
+          currency:
+            detail.price?.currency ?? summary?.price?.currency ?? "USD",
+          soldQuantity: quantity,
+          soldDate: null,
+          itemWebUrl: summary?.itemWebUrl ?? detail.itemWebUrl ?? null,
+          sellerName: summary?.seller?.username ?? detail.seller?.username ?? null,
+          condition: summary?.condition ?? detail.condition ?? null,
+          priceBasis: "CURRENT_LISTING_WITH_SALES",
+        };
+      })
+      .filter((reference): reference is SoldReference => reference !== null)
+      .sort((a, b) => b.soldQuantity - a.soldQuantity);
+
+    if (references.length === 0) return { status: "UNAVAILABLE" };
     return {
-      status: "BROWSE_ESTIMATE",
+      status: "BROWSE_HISTORY",
       provenance: "LIVE",
-      soldCount: totalSold,
+      soldCount: references.reduce(
+        (total, reference) => total + reference.soldQuantity,
+        0,
+      ),
+      prices: references.map((reference) => reference.price),
+      references,
+      scannedListingCount: details.length,
       fetchedAt: new Date().toISOString(),
     };
   }

@@ -8,9 +8,10 @@ import type { CompsResult } from "@/lib/analysis/types";
 import { median, percentile, trimOutliers } from "@/lib/stats";
 
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h (§8)
+const CACHE_SCHEMA_VERSION = "sold-evidence-v2";
 
 function queryHash(q: SearchQuery): string {
-  const norm = `${q.q.trim().toLowerCase()}|${q.condition ?? ""}|${
+  const norm = `${CACHE_SCHEMA_VERSION}|${q.q.trim().toLowerCase()}|${q.condition ?? ""}|${
     process.env.EBAY_MARKETPLACE_ID ?? "EBAY_US"
   }`;
   return crypto.createHash("sha256").update(norm).digest("hex");
@@ -44,11 +45,15 @@ async function fromSource(
       count: sold.soldCount,
       ...summarize(sold.prices),
       series: sold.series,
+      references: sold.references,
     };
-  } else if (sold.status === "BROWSE_ESTIMATE") {
+  } else if (sold.status === "BROWSE_HISTORY") {
     soldResult = {
-      status: "BROWSE_ESTIMATE",
+      status: "BROWSE_HISTORY",
       count: sold.soldCount,
+      ...summarize(sold.prices),
+      references: sold.references,
+      scannedListingCount: sold.scannedListingCount,
     };
   } else {
     soldResult = { status: "UNAVAILABLE" };

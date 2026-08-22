@@ -11,6 +11,7 @@ import { VerdictBanner } from "@/components/sourcing/VerdictBanner";
 import { MetricsGrid } from "@/components/sourcing/MetricsGrid";
 import { FeeCalculator } from "@/components/sourcing/FeeCalculator";
 import { HypePanel } from "@/components/sourcing/HypePanel";
+import { SoldReferences } from "@/components/sourcing/SoldReferences";
 
 // Recharts is the heaviest client dependency and only renders after an
 // analysis — split it out of the initial /sourcing bundle
@@ -124,7 +125,7 @@ export function SourcingClient() {
           roi: m.roi,
           str: m.sellThroughRate,
           activeCount: state.comps.active.count,
-          soldCount: state.comps.sold.status !== "UNAVAILABLE" ? state.comps.sold.count : null,
+          soldCount: state.comps.sold.status === "OK" ? state.comps.sold.count : null,
           decaySlope: analysis.decaySlope,
           daysToFlip: m.daysToFlip,
           capitalPerDay: m.capitalPerDay,
@@ -189,8 +190,8 @@ export function SourcingClient() {
               {state.comps.active.count} active ·{" "}
               {state.comps.sold.status === "OK"
                 ? `${state.comps.sold.count} sold/90d`
-                : state.comps.sold.status === "BROWSE_ESTIMATE"
-                  ? `~${state.comps.sold.count} sold (listing counts)`
+                : state.comps.sold.status === "BROWSE_HISTORY"
+                  ? `${state.comps.sold.count.toLocaleString()} sold (listing history)`
                   : "sold unavailable"}
             </span>
             {state.form.qty > 1 && (
@@ -203,6 +204,7 @@ export function SourcingClient() {
 
           <VerdictBanner analysis={analysis} />
           <MetricsGrid analysis={analysis} comps={state.comps} />
+          <SoldReferences sold={state.comps.sold} />
 
           <div className="grid gap-6 lg:grid-cols-2">
             <FeeCalculator

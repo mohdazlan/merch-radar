@@ -80,6 +80,21 @@ describe("computeMetrics", () => {
     expect(m.estSellPriceSource).toBe("ACTIVE_DISCOUNTED");
   });
 
+  it("prices from only listings with reported sales without inventing 90-day velocity", () => {
+    const m = computeMetrics({
+      ...base,
+      soldCount: null,
+      soldPrices: null,
+      soldListingPrices: [179.99, 184.99, 189.99],
+    });
+    if (m.status !== "OK") throw new Error("expected OK");
+    expect(m.estSellPrice).toBe(184.99);
+    expect(m.estSellPriceSource).toBe("SOLD_LISTING_MEDIAN");
+    expect(m.sellThroughRate).toBeNull();
+    expect(m.daysToFlip).toBeNull();
+    expect(m.capitalPerDay).toBeNull();
+  });
+
   it("returns NO_COMPS when there is nothing to price against", () => {
     const m = computeMetrics({
       ...base,

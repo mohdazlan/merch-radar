@@ -18,7 +18,10 @@ export type MetricsInput = {
   activePrices: number[];
   /** null = sold data UNAVAILABLE */
   soldCount: number | null;
+  /** completed-sale prices from Marketplace Insights */
   soldPrices: number[] | null;
+  /** current prices, restricted to Browse listings with reported sales */
+  soldListingPrices?: number[] | null;
   /** fractional price change over 90d from the forecast engine; null = unknown */
   decaySlope: number | null;
   preset: FeePreset;
@@ -31,7 +34,10 @@ export type Metrics = {
   status: "OK";
   estSellPrice: number;
   /** MODELED provenance detail: which comps produced the estimate */
-  estSellPriceSource: "SOLD_MEDIAN" | "ACTIVE_DISCOUNTED";
+  estSellPriceSource:
+    | "SOLD_MEDIAN"
+    | "SOLD_LISTING_MEDIAN"
+    | "ACTIVE_DISCOUNTED";
   sellThroughRate: number | null;
   daysToFlip: number | null;
   netProceeds: number;
@@ -50,6 +56,7 @@ export const ACTIVE_FALLBACK_DISCOUNT = 0.88;
 
 export function computeMetrics(input: MetricsInput): Metrics | NoComps {
   const soldPrices = trimOutliers(input.soldPrices ?? []);
+  const soldListingPrices = trimOutliers(input.soldListingPrices ?? []);
   const activePrices = trimOutliers(input.activePrices);
 
   let estSellPrice: number;
@@ -57,6 +64,9 @@ export function computeMetrics(input: MetricsInput): Metrics | NoComps {
   if (soldPrices.length > 0) {
     estSellPrice = cents(median(soldPrices));
     estSellPriceSource = "SOLD_MEDIAN";
+  } else if (soldListingPrices.length > 0) {
+    estSellPrice = cents(median(soldListingPrices));
+    estSellPriceSource = "SOLD_LISTING_MEDIAN";
   } else if (activePrices.length > 0) {
     estSellPrice = cents(median(activePrices) * ACTIVE_FALLBACK_DISCOUNT);
     estSellPriceSource = "ACTIVE_DISCOUNTED";

@@ -1,4 +1,5 @@
 import type { Condition } from "@/lib/ebay/DemandSource";
+import type { SoldReference } from "@/lib/ebay/DemandSource";
 
 /**
  * Wire shape of /api/comps. The server fetches and trims comps; every
@@ -35,10 +36,17 @@ export type CompsResult = {
         p25: number;
         p75: number;
         series: { date: string; price: number }[];
+        references: SoldReference[];
       }
     | {
-        status: "BROWSE_ESTIMATE";
+        status: "BROWSE_HISTORY";
         count: number;
+        prices: number[];
+        median: number;
+        p25: number;
+        p75: number;
+        references: SoldReference[];
+        scannedListingCount: number;
       }
     | { status: "UNAVAILABLE" };
 };

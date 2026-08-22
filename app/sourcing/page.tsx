@@ -20,6 +20,7 @@ const DEMO_BUYS: Record<string, { buyCost: number; shippingCost: number }> = {
   "funko pop grogu 1105": { buyCost: 4, shippingCost: 4.5 },
   "vintage pyrex butterfly gold bowl": { buyCost: 12, shippingCost: 8 },
   "apple airpods pro 2nd gen": { buyCost: 118, shippingCost: 5 },
+  "royal berkley": { buyCost: 111, shippingCost: 8 },
 };
 
 const money = (x: number) => `$${x.toFixed(2)}`;
@@ -33,9 +34,8 @@ function buildRows() {
   return FIXTURE_PRODUCTS.map((p) => {
     const buy = DEMO_BUYS[p.key] ?? { buyCost: 10, shippingCost: 5 };
     const soldOk = p.sold.status === "OK" ? p.sold : null;
-    const soldEstimate =
-      p.sold.status === "BROWSE_ESTIMATE" ? p.sold : null;
-    const hasSoldCount = soldOk ?? soldEstimate;
+    const soldBrowse =
+      p.sold.status === "BROWSE_HISTORY" ? p.sold : null;
 
     const forecast = soldOk ? fitDecay(soldOk.series) : null;
     const decaySlope =
@@ -46,8 +46,9 @@ function buildRows() {
       shippingCost: buy.shippingCost,
       activeCount: p.active.activeCount,
       activePrices: p.active.prices,
-      soldCount: hasSoldCount ? hasSoldCount.soldCount : null,
+      soldCount: soldOk ? soldOk.soldCount : null,
       soldPrices: soldOk ? soldOk.prices : null,
+      soldListingPrices: soldBrowse ? soldBrowse.prices : null,
       decaySlope,
       preset: DEFAULT_PRESET,
     });
@@ -61,8 +62,13 @@ function buildRows() {
       decaySlope,
     });
     const confidence = computeConfidence({
-      soldCount: hasSoldCount ? hasSoldCount.soldCount : null,
-      soldPrices: soldOk ? soldOk.prices : null,
+      soldCount: soldOk ? soldOk.soldCount : null,
+      soldPrices: soldOk?.prices ?? soldBrowse?.prices ?? null,
+      sampleCount: soldOk
+        ? soldOk.prices.length
+        : soldBrowse
+          ? soldBrowse.references.length
+          : undefined,
       dataAgeDays: 1,
     });
     const weak =
@@ -103,7 +109,7 @@ export default function SourcingPage() {
         Demo scenarios
       </h2>
       <p className="mt-1 text-sm text-ink-2">
-        Five fixture products through the same engines — type one into the
+        Six fixture products through the same engines — type one into the
         form above to run it interactively.
       </p>
 
@@ -209,8 +215,10 @@ export default function SourcingPage() {
                       <div>{money(metrics.estSellPrice)}</div>
                       <div className="mt-0.5 text-xs text-ink-2">
                         {metrics.estSellPriceSource === "SOLD_MEDIAN"
-                          ? "sold median"
-                          : "active only"}
+                          ? "completed-sale median"
+                          : metrics.estSellPriceSource === "SOLD_LISTING_MEDIAN"
+                            ? "sold-listing median"
+                            : "active only"}
                       </div>
                     </td>
                     <td

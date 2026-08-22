@@ -109,11 +109,13 @@ Every folder under `lib/` marked "pure, unit-tested" has a matching `*.test.ts` 
 What to create and by when. Seasonal/event demand engine with `launchBy = peakDate − leadWeeks·7d` (derived, never stored). 30-event seed dataset (Halloween, Christmas, BFCM, Valentine's, Mother's/Father's Day, Easter, Diwali, Lunar New Year, Eid, World Cup, Super Bowl, etc.) with per-event tier, region, keywords, niches, design directions, palettes, styles, products. Hand-rolled 13-month timeline (CSS grid + absolutely positioned lane-packed bars — not Recharts). `ActNowStrip` surfaces imminent launch windows.
 
 ### 5.2 Sourcing (`/sourcing`) — execution, console mode
-"Should I buy this unit/pallet at this cost?" Input panel (product/UPC, buy cost, ship cost, qty, condition, target platform, item location) → `/api/comps` (eBay Browse + Insights) → computed metrics → verdict engine → verdict banner + metrics grid + fee waterfall + decay forecast + hype panel (demo) + AI risk narrative.
+"Should I buy this unit/pallet at this cost?" Input panel (product/UPC, buy cost, ship cost, qty, condition, target platform, item location) → `/api/comps` (eBay Browse + Insights) → computed metrics → verdict engine → verdict banner + metrics grid + sold-evidence table + fee waterfall + decay forecast + hype panel (demo) + AI risk narrative. Browse-only mode now bulk-hydrates the top 20 matched item IDs through `getItems` and exposes listings with a positive `estimatedSoldQuantity`; these are labeled lifetime listing history, not 90-day completed-sale data.
 
 Computed metrics (`lib/verdict/metrics.ts`):
 ```
-estSellPrice    = median(soldPrices), fallback median(activePrices) × 0.88
+estSellPrice    = median(completedSalePrices)
+                  fallback median(currentPricesOfListingsWithSales)
+                  fallback median(activePrices) × 0.88
 sellThroughRate = soldCount / (soldCount + activeCount)
 daysToFlip      = clamp(90 / max(soldCount,1) * activeCount / competitionFactor, 1, 365)
 netProceeds     = estSellPrice − fees(estSellPrice, preset) − shippingCost
@@ -122,6 +124,8 @@ roi             = netProfit / (buyCost + shippingCost)
 margin          = netProfit / estSellPrice
 capitalPerDay   = netProfit / daysToFlip   ← the featured "profit velocity" metric
 ```
+
+`soldCount` in the velocity formulas is strictly the Marketplace Insights 90-day count. Browse `estimatedSoldQuantity` is a lifetime listing total: it supports the sold-evidence table and the sold-backed pricing fallback, but it never drives sell-through, days-to-flip, profit/day, or decay. See `SOURCE-R1-SOLD-EVIDENCE-CHANGE-RECORD.md` for the implementation rationale and verification record.
 
 Verdict rules (`lib/verdict/rules.ts`, ordered, first match wins):
 | # | Condition | Verdict |
@@ -167,9 +171,9 @@ Chargeable-weight calculation (`lib/shipping/volumetric.ts`, pure/tested) plus l
 ## 6. eBay integration (`lib/ebay/`)
 
 - OAuth2 client-credentials flow (`auth.ts`) → app token, cached ~2h, refreshed on 401. Server-side only.
-- **Browse API** (`browse.ts`, `search.ts`) → active listings, price distribution, aspect refinements (used by Trends). Free tier ≈5,000 calls/day.
+- **Browse API** (`browse.ts`, `search.ts`) → active listings, price distribution, aspect refinements (used by Trends), plus bulk item-detail hydration for per-listing `estimatedSoldQuantity`. The search `ItemSummary` does not contain this availability field; `browse.ts` therefore sends up to 20 best-match REST item IDs to `getItems` with `fieldgroups=COMPACT` and retains only sold-backed references. Free tier ≈5,000 calls/day.
 - **Marketplace Insights API** (`insights.ts`) → 90-day sold data. Requires separate, harder eBay approval than Browse. Biggest external dependency risk in the project.
-- `DemandSource` interface (`DemandSource.ts`) with implementations `EbayBrowseSource` (always available), an Insights-backed source (when approved), and `FixtureSource` (Demo Mode) — when sold data is `UNAVAILABLE`, UI degrades honestly rather than fabricating.
+- `DemandSource` interface (`DemandSource.ts`) with implementations `EbayBrowseSource` (always available), an Insights-backed source (when approved), and `FixtureSource` (Demo Mode). Sold results are `OK` (completed 90-day sales), `BROWSE_HISTORY` (lifetime quantity plus current price for sold-backed active listings), or `UNAVAILABLE`; the UI discloses the distinction and never fabricates a completed sale.
 - Comps cached per normalized query for 6h via the `CompsCache` Prisma table; manifest rows dedupe against this cache before hitting the API.
 - Exponential backoff on 429/5xx; circuit-breaker falls back to Demo fixtures with a visible banner if eBay is down.
 - **Circuit breaking is per-unit-of-work, not per-request**, across every multi-item surface: manifest rows, shipping quotes, and Trends keywords each fall back to a demo/fixture value independently on failure (carrying a `degraded: true` flag where applicable) rather than failing the whole batch when one item's live call errors.

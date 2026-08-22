@@ -24,7 +24,6 @@ export function MetricsGrid({
         ? "MODELED"
         : "MODELED";
   const soldMissing = m.sellThroughRate === null;
-  const browseEstimate = comps.sold.status === "BROWSE_ESTIMATE";
 
   const tiles: {
     label: string;
@@ -38,7 +37,12 @@ export function MetricsGrid({
       label: "Est. sell price",
       value: money(m.estSellPrice),
       provenance: estProv,
-      note: m.estSellPriceSource === "SOLD_MEDIAN" ? "sold median" : "active × 0.88",
+      note:
+        m.estSellPriceSource === "SOLD_MEDIAN"
+          ? "completed-sale median"
+          : m.estSellPriceSource === "SOLD_LISTING_MEDIAN"
+            ? "median of listings with sales"
+            : "active × 0.88",
     },
     {
       label: "Net profit / unit",
@@ -52,16 +56,13 @@ export function MetricsGrid({
       value: soldMissing ? "—" : pct(m.sellThroughRate!),
       provenance: soldMissing ? "UNAVAILABLE" : estProv,
       note: soldMissing
-        ? "requires sold data"
-        : browseEstimate
-          ? "from listing sold counts"
-          : "sold ÷ (sold + active)",
+        ? "requires 90-day sold data"
+        : "sold ÷ (sold + active)",
     },
     {
       label: "Days to flip",
       value: m.daysToFlip === null ? "—" : String(Math.round(m.daysToFlip)),
       provenance: m.daysToFlip === null ? "UNAVAILABLE" : estProv,
-      note: browseEstimate && m.daysToFlip !== null ? "estimated from listing counts" : undefined,
     },
     {
       label: "Profit / day",

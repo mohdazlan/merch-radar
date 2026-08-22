@@ -41,9 +41,8 @@ export function analyze(
   input: AnalysisInput,
 ): Analysis | NoComps {
   const soldOk = comps.sold.status === "OK" ? comps.sold : null;
-  const soldEstimate =
-    comps.sold.status === "BROWSE_ESTIMATE" ? comps.sold : null;
-  const hasSoldCount = soldOk ?? soldEstimate;
+  const soldBrowse =
+    comps.sold.status === "BROWSE_HISTORY" ? comps.sold : null;
 
   const forecast = soldOk ? fitDecay(soldOk.series) : null;
   const decaySlope =
@@ -55,8 +54,11 @@ export function analyze(
     shippingCost: input.shippingCost,
     activeCount: comps.active.count,
     activePrices: comps.active.prices,
-    soldCount: hasSoldCount ? hasSoldCount.count : null,
+    // Browse quantities are lifetime listing totals, not a 90-day sales
+    // window. They may support pricing but must not drive STR/velocity.
+    soldCount: soldOk ? soldOk.count : null,
     soldPrices: soldOk ? soldOk.prices : null,
+    soldListingPrices: soldBrowse ? soldBrowse.prices : null,
     decaySlope,
     preset,
     feeOptions: { promotedListingPct: input.promotedListingPct || undefined },
@@ -73,8 +75,13 @@ export function analyze(
   const dataAgeDays =
     (Date.now() - Date.parse(comps.fetchedAt)) / 86_400_000 || 0;
   const confidence = computeConfidence({
-    soldCount: hasSoldCount ? hasSoldCount.count : null,
-    soldPrices: soldOk ? soldOk.prices : null,
+    soldCount: soldOk ? soldOk.count : null,
+    soldPrices: soldOk?.prices ?? soldBrowse?.prices ?? null,
+    sampleCount: soldOk
+      ? soldOk.prices.length
+      : soldBrowse
+        ? soldBrowse.references.length
+        : undefined,
     dataAgeDays: Math.max(dataAgeDays, 0),
   });
 

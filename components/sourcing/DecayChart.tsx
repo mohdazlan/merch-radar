@@ -41,14 +41,14 @@ export function DecayChart({
 }) {
   if (comps.sold.status !== "OK") {
     const hasBrowseCount =
-      comps.sold.status === "BROWSE_ESTIMATE" ? comps.sold.count : 0;
+      comps.sold.status === "BROWSE_HISTORY" ? comps.sold.count : 0;
     return (
       <EmptyState
         icon={LineChart}
         title="Forecast requires sold price history"
         body={
           hasBrowseCount > 0
-            ? `We can see ~${hasBrowseCount} units sold across active listings, but the price trend chart needs individual sold prices and dates (Marketplace Insights API). Demand metrics above use the listing sold counts.`
+            ? `We can see ${hasBrowseCount.toLocaleString()} lifetime units sold across matched listings, but the trend chart needs individual sold prices and dates from a defined 90-day window. Listing-history quantities are not used as 90-day velocity.`
             : "Sold history is unavailable for this query (Marketplace Insights not granted). No projection is drawn — we don't invent sold prices."
         }
       />
